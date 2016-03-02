@@ -10,11 +10,11 @@ var Enemy = function() {
 
 // Game and game state variables
 var Game = {
-    time:0,           // accumulated time between enemy moves, seconds
-    speed:1000,        // target value between enemy moves, milliseconds
+    time:0,           // accumulated time between enemy moves
+    speed:1,        // target value between enemy moves
     alive:true,       // are we alive?
     points:0,         // # of goal row reaches
-    speeddec:10,    // decrement of speed for each subsequent win
+    speedinc:1,    // decrement of speed for each subsequent win
     enemycount:1,                          // # of current enemies
     enemymax:4,                           // most possible enemies
     athome:false,                         // were we at the home row last keystroke?
@@ -30,30 +30,27 @@ Enemy.prototype.update = function(dt) {
     // all computers.
     for(j=0; j<allEnemies.length; j++)
     {
-        if(Game.time>Game.speed)
-        {
-             allEnemies[j].xpos++;
-             Game.time = 0;
-        }
-        else
-        {
-            Game.time+=dt*1000;      //delta-t is in mSec, convert back to seconds. not exact but OK
-        }
-        if(allEnemies[j].xpos > Game.xvals.length)
-        {
-            allEnemies[j].xpos = 0;
-        }
-        
-        allEnemies[j].x = Game.xvals[allEnemies[j].xpos]; 
-        allEnemies[j].y = Game.yvals[allEnemies[j].ypos];
 
-        /* collision detect */
-        if(allEnemies[j].xpos === player.xpos)
+        allEnemies[j].x += dt*10*(allEnemies[j].increment + Game.speed);
+        if(allEnemies[j].x>420) allEnemies[j].x = 0;
+ 
+        /* collision detect */ 
+        if(allEnemies[j].ypos === player.ypos)  // same row?
         {
-            if(allEnemies[j].ypos === player.ypos)
+            if(allEnemies[j].x >= player.x )
             {
-                Game.alive = false;  // player is kill
-             }
+                if((allEnemies[j].x - player.x) <= 70 )
+                {
+                    Game.alive = false;  // player is kill
+                }
+            }
+            else
+            {
+                if((player.x - allEnemies[j].x) <= 70 )
+                {
+                    Game.alive = false;  // player is kill
+                }
+            }
         }
     };
 };
@@ -66,9 +63,9 @@ Enemy.prototype.render = function() {
 
 Enemy.prototype.x = 0;
 Enemy.prototype.y = 0;
-Enemy.prototype.xpos = 0;      // position in the xvals array
+//Enemy.prototype.xpos = 0;      // position in the xvals array
 Enemy.prototype.ypos = 0;      // postion in the yvals array
-
+Enemy.prototype.increment = 0;
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
@@ -149,8 +146,16 @@ Player.prototype.handleInput = function(code){
     if(player.ypos==0)  // home row
     {
         Game.points++;
-        Game.speed -= Game.speeddec;
+        Game.speed += Game.speedinc;
         Game.athome = true;
+        if( (Game.points % 5) === 0)
+        {
+            if(allEnemies.length<Game.enemymax)
+            {
+                allEnemies.push(new Enemy);
+                enemyUpdate(allEnemies);
+            }
+        }
     }
 }
 
@@ -174,19 +179,24 @@ for(j=0; j<Game.enemycount; j++)
     allEnemies.push(new Enemy);    
 }
 
-for(j=0; j<allEnemies.length; j++)
+enemyUpdate = function(allEnemies)
 {
-    allEnemies[j].xpos=0;
-    // 1 through 3 are valid
-    allEnemies[j].ypos=j+1;   
-    if(allEnemies[j].ypos>3)
+    for(j=0; j<allEnemies.length; j++)
     {
-        allEnemies[j].ypos -= 3;   
-    }
-    allEnemies[j].x = Game.xvals[allEnemies[j].xpos]; //xvals[this.xpos];
-    allEnemies[j].y = Game.yvals[allEnemies[j].ypos];; //yvals[this.ypos];
-};
+        allEnemies[j].increment = Math.random() * 20 ;
+        allEnemies[j].xpos=0;
+        // 1 through 3 are valid
+        allEnemies[j].ypos=j+1;   
+        if(allEnemies[j].ypos>3)
+        {
+            allEnemies[j].ypos -= 3;   
+        }
+        allEnemies[j].x = Game.xvals[allEnemies[j].xpos]; //xvals[this.xpos];
+        allEnemies[j].y = Game.yvals[allEnemies[j].ypos];; //yvals[this.ypos];
+    };
+}
 
+enemyUpdate(allEnemies);
 
 player = new Player;
 
